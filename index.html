@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deep Learning for Recommendation — Interactive Course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: an interactive textbook — part navigation on the left, one part at a time in a reading column, simulators breaking out wider. */
+:root{
+  --bg:#F6F8F8; --surface:#FFFFFF; --card:#EAF1F1; --line:#BFD9D8;
+  --ink:#16233F; --body:#33404E; --muted:#5B6675;
+  --teal:#2B6F76; --teal-soft:#D6E8E8; --gold:#B08D3E; --red:#B4472A; --red-soft:#F6E4DF;
+  --ok:#2E7D4F; --ok-soft:#E3F2D9; --note:#FFF2CC; --note-line:#44546A;
+  --grid:#D9E2E2; --dot:#C7CDD6; --inv-bg:#16233F; --inv-fg:#FBFAF6;
+  --display:"EB Garamond", Georgia, "Times New Roman", serif;
+  --sans:"IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --mono:"IBM Plex Mono", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E1626; --surface:#16233F; --card:#1E2E4D; --line:#2F4468;
+  --ink:#F1F3F7; --body:#D5DAE3; --muted:#9AA5B6;
+  --teal:#5FB3B9; --teal-soft:#1F3D45; --gold:#D4AF5F; --red:#E27A5E; --red-soft:#3B2420;
+  --ok:#6CC58F; --ok-soft:#1F3D33; --note:#3A3420; --note-line:#8C7A45;
+  --grid:#2A3B5C; --dot:#4A5878; --inv-bg:#F1F3F7; --inv-fg:#16233F; color-scheme: dark; } }
+:root[data-theme="dark"]{
+  --bg:#0E1626; --surface:#16233F; --card:#1E2E4D; --line:#2F4468;
+  --ink:#F1F3F7; --body:#D5DAE3; --muted:#9AA5B6;
+  --teal:#5FB3B9; --teal-soft:#1F3D45; --gold:#D4AF5F; --red:#E27A5E; --red-soft:#3B2420;
+  --ok:#6CC58F; --ok-soft:#1F3D33; --note:#3A3420; --note-line:#8C7A45;
+  --grid:#2A3B5C; --dot:#4A5878; --inv-bg:#F1F3F7; --inv-fg:#16233F; color-scheme: dark; }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg)}
+body{color:var(--body);font-family:var(--sans);font-size:16px;line-height:1.6}
+h1,h2,h3,h4{color:var(--ink);text-wrap:balance;margin:0}
+h1{font-family:var(--display);font-size:clamp(30px,4.6vw,44px);line-height:1.05}
+h2{font-family:var(--display);font-size:clamp(28px,4vw,38px);line-height:1.1}
+h3{font-family:var(--display);font-size:clamp(22px,2.8vw,27px);line-height:1.2}
+h4{font-size:15px;font-weight:600}
+p{margin:0}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.kick{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal)}
+.kick.red{color:var(--red)} .kick.gold{color:var(--gold)}
+a{color:var(--teal)}
+b,strong{color:var(--ink)}
+
+/* app shell */
+.app{display:grid;grid-template-columns:280px minmax(0,1fr);min-height:100%}
+.side{position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:20px 16px;display:flex;flex-direction:column;gap:14px}
+.brand{display:grid;gap:4px}
+.brand .t{font-family:var(--display);font-size:24px;color:var(--ink);line-height:1.1}
+.brand .s{font-size:12px;color:var(--muted)}
+.parts{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.parts > li > button{width:100%;display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px;align-items:center;text-align:left;border:1px solid transparent;background:none;border-radius:8px;padding:7px 8px;font:600 14px var(--sans);color:var(--ink);cursor:pointer}
+.parts > li > button:hover{background:var(--card)}
+.parts > li > button[aria-current="true"]{background:var(--ink);color:var(--surface)}
+.parts .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--card);color:var(--ink);font:700 12px var(--sans)}
+.parts > li > button[aria-current="true"] .n{background:var(--gold);color:#16233F}
+.parts .done .n{background:var(--ok);color:#fff}
+.toc{list-style:none;margin:4px 0 6px 38px;padding:0;display:grid;gap:2px;border-left:2px solid var(--line)}
+.toc a{display:block;padding:3px 10px;font-size:13px;color:var(--muted);text-decoration:none;line-height:1.35}
+.toc a:hover{color:var(--teal)}
+.progress{margin-top:auto;background:var(--card);border-radius:10px;padding:12px}
+.progress .bar{height:8px;background:var(--surface);border-radius:4px;overflow:hidden;margin-top:6px}
+.progress .bar i{display:block;height:100%;background:var(--gold);width:0;transition:width .3s}
+.mobilebar{display:none}
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{display:none}
+  .mobilebar{display:flex;position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--surface);border-bottom:1px solid var(--line);padding:10px 16px;gap:10px;align-items:center}
+  .mobilebar select{flex:1;min-width:0;font:600 14px var(--sans);padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+  .mobilebar .p{font:600 12px var(--mono);color:var(--gold);white-space:nowrap}
+}
+main{min-width:0}
+.col{max-width:900px;margin:0 auto;padding-inline:20px;padding-block:28px 64px;display:grid;gap:28px}
+@media (max-width:520px){.col{padding-inline:16px}}
+
+/* part header */
+.phead{display:grid;gap:10px;padding-bottom:6px}
+.phead .big{font-family:var(--display);font-size:64px;line-height:.9;color:var(--gold)}
+.thread{display:flex;flex-wrap:wrap;gap:6px}
+.thread span{font:600 12px var(--sans);padding:4px 10px;border-radius:999px;background:var(--card);color:var(--muted)}
+.thread span.on{background:var(--gold);color:#16233F}
+.thread span.past{background:var(--teal-soft);color:var(--teal)}
+
+/* section = one slide */
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;display:grid;gap:14px;scroll-margin-top:72px;min-width:0}
+@media (max-width:520px){.sec{padding:16px}}
+.sec > p, .sec li{max-width:72ch}
+.note{background:var(--note);border:1px solid var(--note-line);padding:12px 16px;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%);font-size:15px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start}
+@media (max-width:720px){.grid2,.grid3{grid-template-columns:minmax(0,1fr)} .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.box{background:var(--card);border-radius:10px;padding:14px 16px;display:grid;gap:6px;min-width:0}
+.box.inv{background:var(--inv-bg);color:var(--inv-fg)}
+.box.inv b,.box.inv strong,.box.inv h4{color:var(--gold)}
+.box.warn{background:var(--red-soft)}
+.box.good{background:var(--ok-soft)}
+.box h4{margin-bottom:2px}
+ul.clean{margin:0;padding-left:20px;display:grid;gap:4px}
+.fimg{background:#FFFFFF;border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;place-items:center}
+.fimg img{max-height:150px;width:auto;max-width:100%}
+.fimg.tall img{max-height:260px}
+.fig{display:grid;gap:6px;margin:0}
+.fig .frame{background:#FFFFFF;border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;place-items:center}
+.fig img{max-height:300px;width:auto;max-width:100%}
+.fig figcaption{font-size:13px;color:var(--muted)}
+.qr{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:10px;padding:10px}
+.qr img{width:92px;height:92px;background:#fff;border-radius:6px;padding:4px}
+.qr span{font-size:13px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{background:var(--inv-bg);color:var(--inv-fg);font-weight:600;padding:7px 10px;text-align:left}
+td{padding:7px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+td.hl{background:var(--note);font-weight:700;color:var(--ink)}
+.tip{display:flex;gap:10px;background:var(--teal-soft);border-radius:10px;padding:12px 14px;font-size:15px}
+.tip b{color:var(--teal)}
+.take{background:var(--inv-bg);color:var(--inv-fg);border-radius:10px;padding:12px 16px}
+.take b{color:var(--gold)}
+.math{font-family:var(--mono);font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;overflow-wrap:anywhere}
+
+/* widgets */
+.widget{background:var(--bg);border:2px solid var(--teal);border-radius:12px;padding:16px;display:grid;gap:12px;min-width:0}
+.widget > .wt{display:flex;gap:8px;align-items:center;font:700 12px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--teal)}
+.widget > .wt::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--teal)}
+.ctrl{display:grid;gap:10px}
+.slider{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center}
+.slider label{font-weight:600;color:var(--ink);font-size:14px}
+.slider output{font-family:var(--mono);color:var(--teal);font-weight:600}
+.slider input{grid-column:1 / -1;width:100%;accent-color:var(--teal)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 12px;font:600 13px var(--sans);cursor:pointer}
+.btn:hover{border-color:var(--teal)}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn.warn{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-right:1px solid var(--line);background:var(--surface);color:var(--body);padding:7px 12px;font:600 13px var(--sans);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--inv-bg);color:var(--inv-fg)}
+.readout{background:var(--inv-bg);color:var(--inv-fg);border-radius:10px;padding:12px 14px;font-family:var(--mono);font-size:14px;display:grid;gap:4px}
+.readout b{color:var(--gold)}
+.readout .s{font-family:var(--sans)}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.ax{stroke:var(--muted);stroke-width:1}
+.grd{stroke:var(--grid);stroke-width:1}
+.tl{fill:var(--muted);font:12px var(--sans)}
+.tlb{fill:var(--ink);font:600 12px var(--sans)}
+.products{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:620px){.products{grid-template-columns:minmax(0,1fr)}}
+.prod{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface);display:grid;gap:8px;min-width:0}
+.prod .bigv{font-family:var(--display);font-size:30px;color:var(--ink);line-height:1}
+.prod .meta{font-size:12px;color:var(--muted)}
+.hist{display:grid;gap:3px}
+.hist .row{display:grid;grid-template-columns:22px minmax(0,1fr) 44px;gap:6px;align-items:center;font-size:11px;color:var(--muted)}
+.hist .bar{height:8px;background:var(--card);border-radius:4px;overflow:hidden}
+.hist .bar i{display:block;height:100%;background:var(--gold)}
+.add{display:flex;flex-wrap:wrap;gap:4px}
+.add button{flex:1 1 0;min-width:34px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:4px 0;font:600 12px var(--sans);cursor:pointer}
+.rank{list-style:none;margin:0;padding:0;display:grid;gap:6px;counter-reset:r}
+.rank li{counter-increment:r;display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.rank li::before{content:counter(r);width:24px;height:24px;border-radius:50%;background:var(--inv-bg);color:var(--inv-fg);display:grid;place-items:center;font-size:12px;font-weight:700}
+.rank li:first-child::before{background:var(--gold);color:#16233F}
+.rank .sc{font-family:var(--mono);color:var(--teal);font-weight:600}
+.rank .sub{font-size:12px;color:var(--muted)}
+.days{display:flex;flex-wrap:wrap;gap:6px}
+.days button{width:44px;height:52px;border-radius:8px;font:700 18px var(--sans);cursor:pointer;display:grid;place-items:center;line-height:1;padding:2px}
+.days button small{font:500 10px var(--sans);color:var(--muted)}
+.days .S{background:#FFF1CC;border:1px solid var(--gold);color:#8A6A22}
+.days .R{background:#D9E6F2;border:1px solid #3A7DB5;color:#2C5E8A}
+.links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+@media (max-width:520px){.links{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.links label{display:flex;gap:6px;align-items:center;font:600 13px var(--mono);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 8px;cursor:pointer}
+.links input{accent-color:var(--teal)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+.gi{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.gi.ok{background:var(--ok-soft);border-color:var(--ok)}
+.gi.ko{background:var(--red-soft);border-color:var(--red)}
+.gi .why{grid-column:1 / -1;font-size:12px;color:var(--muted)}
+textarea,input[type=text]{font:500 15px var(--mono);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+
+/* exercises */
+.ex{border:2px solid var(--gold);border-radius:12px;padding:16px;display:grid;gap:12px;background:var(--surface)}
+.ex .qs{display:grid;gap:10px}
+.ex .q{display:grid;grid-template-columns:minmax(0,1fr) 120px auto;gap:10px;align-items:center}
+@media (max-width:560px){.ex .q{grid-template-columns:minmax(0,1fr) 100px}.ex .q .mark{grid-column:1 / -1}}
+.ex .q input{text-align:center}
+.ex .q input.ok{border-color:var(--ok);background:var(--ok-soft)}
+.ex .q input.ko{border-color:var(--red);background:var(--red-soft)}
+.ex .mark{font-size:13px;min-width:0}
+.ex .sol{background:var(--card);border-radius:10px;padding:12px 14px;display:grid;gap:8px}
+
+/* mcq */
+.mcq{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:16px;display:grid;gap:10px}
+.mcq .q{font-weight:600;color:var(--ink)}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.opts{grid-template-columns:minmax(0,1fr)}}
+.opt{text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--body);border-radius:8px;padding:9px 12px;font:500 14px var(--sans);cursor:pointer}
+.opt:hover{border-color:var(--teal)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok);color:var(--ink);font-weight:700}
+.opt.wrong{background:var(--red-soft);border-color:var(--red)}
+.fb{font-size:14px;padding:10px 12px;border-radius:8px;background:var(--card)}
+.fb.ok{border-left:4px solid var(--ok)} .fb.ko{border-left:4px solid var(--red)}
+
+/* path & tree */
+.path{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+@media (max-width:760px){.path{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.path button{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px;cursor:pointer;color:var(--body);font:13px var(--sans);display:grid;gap:3px}
+.path button:hover{border-color:var(--gold)}
+.path .k{font-family:var(--display);font-size:24px;color:var(--gold);line-height:1}
+.path .s{font-family:var(--mono);color:var(--teal);font-size:12px}
+.chain{display:grid;gap:6px}
+.chain .r{display:grid;grid-template-columns:160px minmax(0,1fr) minmax(0,1fr);gap:6px}
+.chain .r > div{border-radius:8px;padding:7px 10px;font-size:14px}
+.chain .t{background:var(--inv-bg);color:var(--inv-fg);font-weight:700}
+.chain .y{background:var(--ok-soft)} .chain .n{background:var(--red-soft);color:var(--red)}
+@media (max-width:620px){.chain .r{grid-template-columns:minmax(0,1fr)}}
+.nav{display:flex;justify-content:space-between;gap:10px}
+.nav .btn{padding:11px 16px;font-size:14px}
+.tree{display:grid;gap:10px;justify-items:center;text-align:center}
+.tree .lvl{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.tree .nd{border-radius:8px;padding:8px 14px;font-weight:600;font-size:14px;background:var(--card);color:var(--ink)}
+.tree .nd.dk{background:var(--inv-bg);color:var(--inv-fg)}
+.tree .fam{display:grid;gap:8px;justify-items:center;border:1px dashed var(--line);border-radius:10px;padding:10px}
+
+/* chapter 3 widgets */
+.rtab select{font:600 14px var(--mono);border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);padding:3px 4px}
+.rtab td.miss select{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+td.click{cursor:pointer} td.click:hover{outline:2px solid var(--gold);outline-offset:-2px}
+td.sel{outline:3px solid var(--gold);outline-offset:-3px}
+td.pos{background:var(--ok-soft);color:var(--ink);font-weight:700}
+td.neg{background:var(--red-soft);color:var(--red);font-weight:700}
+.chk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.chk label{display:flex;gap:6px;align-items:center;font:600 13px var(--sans);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 8px;cursor:pointer}
+.chk input{accent-color:var(--teal)}
+.bars{display:grid;gap:4px}
+.bars .row{display:grid;grid-template-columns:70px minmax(0,1fr);gap:8px;align-items:center;font:12px var(--mono);color:var(--muted)}
+.bars .stack{display:flex;height:16px;border-radius:4px;overflow:hidden;background:var(--card)}
+.bars .stack i{display:block;height:100%}
+textarea{font:500 14px var(--sans);min-height:60px;resize:vertical}
+.vec{font-family:var(--mono);color:var(--teal);font-weight:600}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+pre.code{background:var(--inv-bg);color:var(--inv-fg);border-radius:10px;padding:14px 16px;font:500 13px/1.55 var(--mono);overflow-x:auto;margin:0;white-space:pre}
+.grid3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.plot svg text{font-family:var(--sans)}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" aria-label="Course navigation">
+    <div class="brand">
+      <img src="data:image/png;base64,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" alt="FST Marrakech" style="max-width:160px;background:#fff;border-radius:6px;padding:4px">
+      <span class="kick">Recommender Systems · Chapter 6 · Part 2</span>
+      <span class="t">Deep learning: residual networks and autoencoders</span>
+      <span class="s">Pr. Sara Qassimi · FST Marrakech, UCA</span>
+    </div>
+    <ul class="parts" id="parts"></ul>
+    <div class="progress"><b>Your progress</b><div class="num" id="progTxt" style="font-size:13px">0 / 0 checks</div><div class="bar"><i id="progBar"></i></div></div>
+  </aside>
+  <main>
+    <div class="mobilebar"><select id="partSel" aria-label="Choose a part"></select><span class="p" id="progMob"></span></div>
+    <div class="col" id="col">
+<!-- ==================================================== PART 0 -->
+<section class="part" data-part="0" data-title="Start here" hidden>
+  <header class="phead">
+    <span class="kick">Recommender Systems · Chapter 6 · Part 2</span>
+    <h1>Deep learning for recommendation: residual networks and autoencoders</h1>
+    <p>Part 1 built matrix factorization, a linear model. This part adds neural networks in two ways: a network that <b>corrects</b> MF, and an <b>autoencoder</b> that rebuilds a user's whole rating vector. Then we compute the error with missing ratings and train on a matrix too big for memory.</p>
+  </header>
+
+  <article class="sec">
+    <span class="kick red">Problem</span>
+    <h3>Matrix factorization is linear</h3>
+    <div class="note">Matrix factorization adds up products of numbers, so it can only express simple, linear tastes. Some ratings depend on combinations that a dot product cannot capture. Neural networks can learn such non-linear patterns; the question is how to add them without losing what MF does well.</div>
+    <div class="grid2">
+      <div class="box"><h4>Matrix factorization (Part 1)</h4><span class="mono">r̂ = wᵀu + b + c + μ</span><span>fast, compact, accurate, but LINEAR: sums of products. Misses interactions, thresholds, non-linear tastes. On our table (K = 1): errors up to 0.93 star.</span></div>
+      <div class="box"><h4>Neural networks (this part)</h4><span>learn non-linear patterns. Two ways: <b>1. Residual network</b>: MF + a network that corrects MF. <b>2. Autoencoder</b>: a network that rebuilds a user's whole rating vector.</span></div>
+    </div>
+  </article>
+
+  <article class="sec">
+    <span class="kick red">Problem statement</span>
+    <h3>The questions this part answers</h3>
+    <div class="note">Five questions, one per part. Q1 is about improving MF with a network, Q2 and Q3 about autoencoders and how they fill missing ratings, Q4 about computing the error correctly, and Q5 about training on a matrix that does not fit in memory.</div>
+    <div class="tw"><table><thead><tr><th>#</th><th>Question</th><th>Answered in</th></tr></thead><tbody>
+      <tr><td><b>Q1</b></td><td>How can a neural network improve matrix factorization?</td><td>Part 1</td></tr>
+      <tr><td><b>Q2</b></td><td>What is an autoencoder and what does it learn?</td><td>Part 2</td></tr>
+      <tr><td><b>Q3</b></td><td>How can an autoencoder fill in missing ratings?</td><td>Part 3</td></tr>
+      <tr><td><b>Q4</b></td><td>How do we compute the error when most ratings are missing?</td><td>Part 4</td></tr>
+      <tr><td><b>Q5</b></td><td>How do we train it when the matrix does not fit in memory?</td><td>Part 5</td></tr>
+    </tbody></table></div>
+  </article>
+
+  <article class="sec">
+    <span class="kick">Common thread · 1/2</span>
+    <h3>Two ways to use a neural network, four steps</h3>
+    <div class="note">We are still in model-based collaborative filtering: the models learn only from the ratings. The residual network takes one (user, movie) pair and outputs one rating, like MF. The autoencoder takes a user's whole row of ratings and outputs the whole row rebuilt. Every model follows four steps: sample → network → masked loss → train and test.</div>
+    <div class="path" id="pathBtns" style="grid-template-columns:repeat(5,minmax(0,1fr))">
+      <button type="button" data-go="1"><span class="k">1</span><b>Residual nets</b><span>MF + ANN</span><span class="s">4.0 → 4.7</span></button>
+      <button type="button" data-go="2"><span class="k">2</span><b>Autoencoders</b><span>encoder · decoder</span><span class="s">36.4 M weights</span></button>
+      <button type="button" data-go="3"><span class="k">3</span><b>AutoRec</b><span>noise</span><span class="s">1.53 → 3.01</span></button>
+      <button type="button" data-go="4"><span class="k">4</span><b>Masked loss</b><span>test MSE</span><span class="s">0.12 vs 6.17</span></button>
+      <button type="button" data-go="5"><span class="k">5</span><b>Lab</b><span>sparse + batches</span><span class="s">40 GB → 44 MB</span></button>
+    </div>
+  </article>
+
+  <article class="sec">
+    <span class="kick">Common thread · 2/2</span>
+    <h3>3 questions to ask on every slide</h3>
+    <div class="note">DATA: still only the ratings. SCORE: MF plus a correction, or the rebuilt rating vector. LIMIT: many more parameters, more settings to tune, and still nothing to say about a user who has no rating at all.</div>
+    <div class="tw"><table><thead><tr><th></th><th>1 · DATA</th><th>2 · SCORE</th><th>3 · LIMIT</th></tr></thead><tbody>
+      <tr><td><b>Question</b></td><td>What do we know?</td><td>What number for each (user, item)?</td><td>When does it fail?</td></tr>
+      <tr><td><b>Deep models</b></td><td>the ratings only: IDs or rating vectors</td><td>MF + ANN, or the rebuilt row x̂</td><td>overfitting, tuning, cold start</td></tr>
+      <tr><td><b>Alice → Inception</b></td><td>Alice's row [5, 3, 4, 0, 2]</td><td>x̂ ≈ 3.01 with input noise (H = 2)</td><td>without noise: 1.53 (copies the 0!)</td></tr>
+    </tbody></table></div>
+  </article>
+</section>
+
+<!-- ==================================================== PART 1 -->
+<section class="part" data-part="1" data-title="1 · Residual networks" hidden>
+  <header class="phead"><span class="big">01</span><h2>Residual networks</h2><p>r̂ = MF + ANN: a neural network learns what matrix factorization misses.</p><div class="thread" data-thread="1"></div></header>
+
+  <article class="sec">
+    <span class="kick">Inspiration</span>
+    <h3>ResNet and Inception, borrowed for recommendation</h3>
+    <div class="note">In image recognition, ResNet adds shortcut connections so that a block only learns a correction to its input, and Inception runs several branches in parallel and combines them. We borrow both ideas: keep a simple model (MF, linear), add a branch that learns a correction (a neural network, non-linear), and combine the outputs.</div>
+  </article>
+
+  <article class="sec">
+    <span class="kick">Formula</span>
+    <h3>Residual network: r̂ = MF(x) + ANN(x)</h3>
+    <div class="note">The part of the rating that MF gets wrong is the residual: actual − predicted. The final prediction is the MF prediction plus the network's output, joined by an Add() layer, so the network ends up learning the error of MF. Careful: in the tutorial both branches are trained together, end to end, on the final error, not one after the other.</div>
+    <div class="box inv"><span class="mono">x = (user, movie) · MF(x) = wᵀu (+ biases) · ANN(x) = the correction</span><span class="mono">r̂ = MF(x) + ANN(x) &nbsp;&nbsp; residual = r − MF(x)</span></div>
+    <div class="note">Example: MF predicts 4, the actual rating is 5. The network adds +0.7, so the final prediction is 4.7: the error drops from 1 to 0.3. If the network learned nothing and output 0, the model would simply be MF.</div>
+  </article>
+
+  <article class="sec">
+    <span class="kick gold">Exercise 1</span>
+    <h3>Compute residuals and corrections</h3>
+    <div class="note">For each case, subtract the MF prediction from the actual rating to get the residual. Then add the network's output to the MF prediction. Compare the two errors to see whether the correction helped. Edit the table to test other cases.</div>
+    <div class="widget" data-w="resid"><div class="wt">Try it · residual and correction</div></div>
+    <div class="ex">
+      <div class="qs">
+        <div class="q"><label>Residual A (actual − MF)</label><input type="text" inputmode="decimal" data-ans="-0.8"><span class="mark"></span></div>
+        <div class="q"><label>Final B (MF + ANN)</label><input type="text" inputmode="decimal" data-ans="3.4"><span class="mark"></span></div>
+        <div class="q"><label>|error| of C after the correction</label><input type="text" inputmode="decimal" data-ans="0.5"><span class="mark"></span></div>
+        <div class="q"><label>Case made WORSE (A, B or C)</label><input type="text" data-text="C"><span class="mark"></span></div>
+      </div>
+      <div class="btns"><button class="btn primary" type="button" data-act="check">Check my answers</button><button class="btn" type="button" data-act="sol">Show the solution</button></div>
+      <div class="sol" hidden><p>A: residual 3 − 3.8 = <b>−0.8</b>, final 3.3, |error| 0.8 → 0.3 ✓ · B: residual +1.5, final 2.5 + 0.9 = <b>3.4</b>, 1.5 → 0.6 ✓ · C: residual −0.2, final 4.5, 0.2 → <b>0.5</b> ✗. In case <b>C</b> the ANN pushed in the wrong direction. On new data this is the sign of an overfitted correction branch: regularize it (dropout, L2) and check the TEST MSE. A good correction has the same sign as the residual and a smaller size.</p></div>
+    </div>
+  </article>
+
+  <article class="sec">
+    <span class="kick">Tutorial</span>
+    <h3>Residual network in Keras: one Add() layer</h3>
+    <div class="note">You already built MF in Keras (Embedding + Dot) and a neural network (Embedding + Dense). To make the residual network, add one layer that sums their two outputs, and train with one loss. On 17 ratings a network would simply memorize the residuals: this needs real data (MovieLens).</div>
+<pre class="code">u = Input(shape=(1,));  m = Input(shape=(1,))
+u_emb = Embedding(N, K)(u);  m_emb = Embedding(M, K)(m)
+
+# branch 1: matrix factorization (linear)
+mf = Dot(axes=2)([u_emb, m_emb])
+mf = Add()([mf, Embedding(N, 1)(u), Embedding(M, 1)(m)])   # + biases
+mf = Flatten()(mf)
+
+# branch 2: neural network (non-linear correction)
+ann = Flatten()(Concatenate()([u_emb, m_emb]))
+ann = Dense(400, activation="relu")(ann)
+ann = Dropout(0.5)(ann)
+ann = Dense(1)(ann)
+
+out = Add()([mf, ann])                    # r̂ = MF(x) + ANN(x)
+model = Model([u, m], out)
+model.compile(loss="mse", optimizer=SGD(learning_rate=0.08, momentum=0.9))
+model.fit([users, movies], ratings - mu, validation_data=..., epochs=...)</pre>
+    <div class="mcq" data-correct="1" data-explain="r̂ = MF(x) + ANN(x): the network learns what MF misses. Both are joined by an Add() layer and trained together."><p class="q">In a residual network for recommendation, the ANN branch…</p><div class="opts"><button class="opt" type="button">replaces matrix factorization</button><button class="opt" type="button">learns a correction added to the MF prediction</button><button class="opt" type="button">computes user similarities</button><button class="opt" type="button">stores the full rating matrix</button></div></div>
+  </article>
+</section>
+
+<!-- ==================================================== PART 2 -->
+<section class="part" data-part="2" data-title="2 · Autoencoders" hidden>
+  <header class="phead"><span class="big">02</span><h2>Autoencoders</h2><p>A network that reproduces its own input through a small code.</p><div class="thread" data-thread="2"></div></header>
+
+  <article class="sec">
+    <span class="kick">Explanation</span>
+    <h3>A network that reproduces its own input</h3>
+    <div class="note">An autoencoder is trained to output its own input. The hidden layer is smaller than the input, so the network cannot simply copy: it must learn a compact summary. The only change in code is that the target is X instead of y: <span class="mono">model.fit(X, X)</span>. AutoRec (WWW 2015) is the paper that introduced autoencoders for collaborative filtering; its best variant uses item columns, the course uses user rows, which is easier to follow.</div>
+  </article>
+
+  <article class="sec">
+    <span class="kick">Explanation</span>
+    <h3>Encoder, code, decoder</h3>
+    <div class="note">The encoder compresses the input into a few numbers, the code. The decoder turns the code back into a full vector. For ratings, the code summarizes the user's taste, like the user vector wi of MF, and the decoder plays the role of U: it produces a rating for every movie, including the missing ones.</div>
+    <div class="tw"><table><thead><tr><th></th><th>Movie 1</th><th>Movie 2</th><th>Movie 3</th><th>Movie 4</th><th>Movie 5</th></tr></thead><tbody>
+      <tr><td><b>Input x</b></td><td>5</td><td>3</td><td class="neg">0 (missing)</td><td>4</td><td class="neg">0 (missing)</td></tr>
+      <tr><td><b>Output x̂</b></td><td>5</td><td>3</td><td class="pos">4.5</td><td>4</td><td class="pos">3.2</td></tr>
+    </tbody></table></div>
+    <div class="note">Rebuilt known ratings = training signal. Rebuilt missing ratings = predictions (4.5 and 3.2). The error is computed only where an actual rating exists (positions 1, 2, 4): Part 4 builds this with a mask.</div>
+  </article>
+
+  <article class="sec">
+    <span class="kick gold">Exercise 2</span>
+    <h3>Count the weights of an AutoRec</h3>
+    <div class="note">Each dense layer has one weight per connection plus one bias per output unit. Count the two layers separately and add them. Then think about where the users appear: as parameters, or as data passed through the network?</div>
+    <div class="widget" data-w="aecount"><div class="wt">Try it · AutoRec vs MF, number of parameters</div></div>
+    <div class="ex">
+      <div class="qs">
+        <div class="q"><label>Input → hidden (26,000 → 700, + biases)</label><input type="text" inputmode="numeric" data-ans="18200700" data-tol="1"><span class="mark"></span></div>
+        <div class="q"><label>Hidden → output (700 → 26,000, + biases)</label><input type="text" inputmode="numeric" data-ans="18226000" data-tol="1"><span class="mark"></span></div>
+        <div class="q"><label>Total (in millions)</label><input type="text" inputmode="decimal" data-ans="36.43" data-tol="0.05"><span class="mark"></span></div>
+      </div>
+      <div class="btns"><button class="btn primary" type="button" data-act="check">Check my answers</button><button class="btn" type="button" data-act="sol">Show the solution</button></div>
+      <div class="sol" hidden><p>26,000 × 700 + 700 = <b>18,200,700</b> · 700 × 26,000 + 26,000 = <b>18,226,000</b> · total 36,426,700 ≈ <b>36.4 M</b>, about 23 × MF with K = 10 (1.56 M). The users are not parameters: they are the samples passed through the network. The same weights serve every user, even a new one who has a few ratings.</p></div>
+    </div>
+  </article>
+</section>
+
+<!-- ==================================================== PART 3 -->
+<section class="part" data-part="3" data-title="3 · Denoising &amp; AutoRec" hidden>
+  <header class="phead"><span class="big">03</span><h2>Denoising &amp; AutoRec</h2><p>Corrupt the input on purpose, so the network learns to fill the gaps.</p><div class="thread" data-thread="3"></div></header>
+
+  <article class="sec">
+    <span class="kick">Explanation</span>
+    <h3>From missing pixels to missing ratings</h3>
+    <div class="note">A denoising autoencoder receives a damaged input, for example an image with some pixels set to zero, and must rebuild the clean version: it learns to complete missing parts, exactly the problem of missing ratings. Images and ratings have the same table shape (row = image or user, column = pixel or movie). What changes is what one sample is: one rating for the residual network, one whole user row for AutoRec.</div>
+  </article>
+
+  <article class="sec">
+    <span class="kick">Correction</span>
+    <h3>Why is AutoRec faster? Fewer, bigger samples</h3>
+    <div class="note">Careful: the original slide inverts the reason. AutoRec is faster per epoch because it loops over 130,000 user rows, not over 20 million individual ratings. Each row (26,000 values) is processed as one efficient matrix operation.</div>
+    <div class="widget" data-w="samples"><div class="wt">Try it · samples and batches per epoch</div></div>
+    <div class="ex">
+      <div class="qs">
+        <div class="q"><label>AutoRec: times fewer samples</label><input type="text" inputmode="decimal" data-ans="154" data-tol="1"><span class="mark"></span></div>
+        <div class="q"><label>Residual net: batches of 128</label><input type="text" inputmode="numeric" data-ans="156250" data-tol="1"><span class="mark"></span></div>
+        <div class="q"><label>AutoRec: batches of 128</label><input type="text" inputmode="numeric" data-ans="1016" data-tol="1"><span class="mark"></span></div>
+        <div class="q"><label>Values in ONE AutoRec sample</label><input type="text" inputmode="numeric" data-ans="26000" data-tol="1"><span class="mark"></span></div>
+      </div>
+      <div class="btns"><button class="btn primary" type="button" data-act="check">Check my answers</button><button class="btn" type="button" data-act="sol">Show the solution</button></div>
+      <div class="sol" hidden><p>Residual network: 20,000,000 samples (one per rating), 20 M / 128 = <b>156,250</b> batches, 3 values per sample (user, movie, rating) · AutoRec: 130,000 samples (one per user), 20 M / 130 k ≈ <b>154</b> × fewer, ⌈130,000 / 128⌉ = <b>1,016</b> batches, <b>26,000</b> values per sample. Fewer, larger samples suit matrix operations on CPU and GPU.</p></div>
+    </div>
+  </article>
+
+  <article class="sec">
+    <span class="kick">Explanation</span>
+    <h3>Dropout and noise on the input</h3>
+    <div class="note">During training we hide some known ratings by setting them to 0, while the target stays the original vector. The network must still output the hidden ratings, so it learns to predict missing values instead of copying its input. This also reduces overfitting. Common rates: 0.2 to 0.5, only during training, never at prediction time.</div>
+    <div class="widget" data-w="noise"><div class="wt">Try it · corrupt a user's row</div></div>
+  </article>
+
+  <article class="sec">
+    <span class="kick">Example</span>
+    <h3>Noise on our table: from 1.53 to 3.01</h3>
+    <div class="note">Without noise, the mini autoencoder fits the training ratings almost perfectly but predicts 1.53 for Alice → Inception: it copied the 0 of the missing value. With noise, the training error is higher, but the prediction becomes a plausible 3.01. Lower training error is not better.</div>
+    <div class="tw"><table><thead><tr><th>Model</th><th>train MSE</th><th>Alice → Inception</th></tr></thead><tbody>
+      <tr><td>AutoRec, no noise</td><td class="num">0.03</td><td class="num neg">1.53 (copies the 0)</td></tr>
+      <tr><td>AutoRec, 25% noise</td><td class="num">0.17</td><td class="num pos">3.01</td></tr>
+      <tr><td>MF (Part 1)</td><td class="num">0.14</td><td class="num">3.59</td></tr>
+      <tr><td>User-based / item-based</td><td>—</td><td class="num">2.68 / 2.84</td></tr>
+    </tbody></table></div>
+    <div class="mcq" data-correct="3" data-explain="Without noise the network can reproduce its input, zeros included: the missing rating is rebuilt close to 0. Noise forces it to predict ratings it was not shown."><p class="q">Without input noise, why does the autoencoder predict 1.53 for Alice → Inception?</p><div class="opts"><button class="opt" type="button">Alice dislikes Inception</button><button class="opt" type="button">The learning rate is too small</button><button class="opt" type="button">The hidden layer is too large to train</button><button class="opt" type="button">It learned to copy its input, including the 0 of the missing rating</button></div></div>
+  </article>
+</section>
+
+<!-- ==================================================== PART 4 -->
+<section class="part" data-part="4" data-title="4 · Masked loss &amp; test MSE" hidden>
+  <header class="phead"><span class="big">04</span><h2>Masked loss and test MSE</h2><p>Only known ratings count; never let the model copy the test ratings.</p><div class="thread" data-thread="4"></div></header>
+
+  <article class="sec">
+    <span class="kick">Formula</span>
+    <h3>The cost must ignore the missing ratings</h3>
+    <div class="note">An autoencoder tries to reproduce its input, zeros included. If the loss counted the zeros, the network would learn that missing ratings are 0 stars. The mask is 1 for known ratings and 0 for missing ones, so only known ratings count. Divide by the number of KNOWN ratings, not by the vector length.</div>
+    <div class="box inv"><span class="mono">J = Σi Σj mij (rij − r̂ij)² / Σi Σj mij &nbsp;&nbsp; mij = 1 if rij is known, else 0</span></div>
+<pre class="code">def masked_mse(y_true, y_pred):
+    mask = K.cast(K.not_equal(y_true, 0), "float32")   # 1 = known rating
+    sq = (y_pred - y_true) ** 2 * mask
+    return K.sum(sq) / K.sum(mask)                      # divide by #known</pre>
+  </article>
+
+  <article class="sec">
+    <span class="kick gold">Exercise 4</span>
+    <h3>Masked vs unmasked error</h3>
+    <div class="note">Compute the error twice: once only on the known ratings, once on all positions with target 0 for the missing ones. Compare the two values and see which positions dominate the unmasked error. Input: [5, 0, 3, 0, 4] · output: [4.6, 4.5, 3.4, 3.2, 4.2].</div>
+    <div class="widget" data-w="mask"><div class="wt">Try it · the mask, step by step</div></div>
+    <div class="ex">
+      <div class="qs">
+        <div class="q"><label>Mask (5 digits, e.g. 11001)</label><input type="text" data-text="10101"><span class="mark"></span></div>
+        <div class="q"><label>Masked MSE</label><input type="text" inputmode="decimal" data-ans="0.12" data-tol="0.006"><span class="mark"></span></div>
+        <div class="q"><label>Unmasked MSE</label><input type="text" inputmode="decimal" data-ans="6.17" data-tol="0.011"><span class="mark"></span></div>
+      </div>
+      <div class="btns"><button class="btn primary" type="button" data-act="check">Check my answers</button><button class="btn" type="button" data-act="sol">Show the solution</button></div>
+      <div class="sol" hidden><p>Mask <b>[1, 0, 1, 0, 1]</b> · squared errors 0.16, 20.25, 0.16, 10.24, 0.04 · masked (0.16 + 0.16 + 0.04) / 3 = <b>0.12</b> · unmasked 30.85 / 5 = <b>6.17</b>. Unmasked, 98.8% of the loss comes from the two missing cells, so training would push those outputs toward 0: "missing = 0 star". Always mask.</p></div>
+    </div>
+  </article>
+
+  <article class="sec">
+    <span class="kick">Explanation</span>
+    <h3>Test MSE: never feed the test ratings as input</h3>
+    <div class="note">If the test ratings were part of the input, the autoencoder could simply copy them and get a perfect but meaningless test score. So the input is built from the training ratings only, and the test ratings are used only as targets, with a test mask. In code: <span class="mono">pred = model.predict(X_train)</span>, then compare with X_test.</div>
+    <div class="widget" data-w="testmse"><div class="wt">Try it · one output, two masks</div></div>
+  </article>
+
+  <article class="sec">
+    <span class="kick gold">Exercise 5</span>
+    <h3>Compute a test MSE</h3>
+    <div class="note">Build the test mask from the test row and compare the output with the test ratings at those positions. Then do the same with the train row and its mask. The output is the same for both computations. Train row [5, 0, 3, 0, 0] · test row [0, 3, 0, 0, 4] · output from train [4.8, 3.5, 3.1, 2.9, 3.6].</div>
+    <div class="ex">
+      <div class="qs">
+        <div class="q"><label>Test mask (5 digits)</label><input type="text" data-text="01001"><span class="mark"></span></div>
+        <div class="q"><label>Test MSE</label><input type="text" inputmode="decimal" data-ans="0.205" data-tol="0.006"><span class="mark"></span></div>
+        <div class="q"><label>Train MSE</label><input type="text" inputmode="decimal" data-ans="0.025" data-tol="0.003"><span class="mark"></span></div>
+      </div>
+      <div class="btns"><button class="btn primary" type="button" data-act="check">Check my answers</button><button class="btn" type="button" data-act="sol">Show the solution</button></div>
+      <div class="sol" hidden><p>Test mask <b>[0, 1, 0, 0, 1]</b> · (3 − 3.5)² + (4 − 3.6)² = 0.25 + 0.16 → <b>0.205</b> · train mask [1, 0, 1, 0, 0] · 0.04 + 0.01 → <b>0.025</b>. Test ≈ 8 × train: expected, the model never saw the test ratings. Only the test MSE measures prediction quality.</p></div>
+    </div>
+  </article>
+</section>
+
+<!-- ==================================================== PART 5 -->
+<section class="part" data-part="5" data-title="5 · Lab: sparse data" hidden>
+  <header class="phead"><span class="big">05</span><h2>Lab: sparse data</h2><p>Feed a huge sparse matrix to Keras in batches.</p><div class="thread" data-thread="5"></div></header>
+
+  <article class="sec">
+    <span class="kick">Explanation</span>
+    <h3>Sparse matrices: store only the ratings</h3>
+    <div class="note">The full rating matrix is far too big for memory, but the autoencoder needs its rows. SciPy sparse formats store only the actual ratings: lil_matrix is easy to fill, csr_matrix gives fast row slicing, coo_matrix stores (row, col, value) triples. Keras needs dense arrays, so we convert small batches one at a time. Store sparse, train dense.</div>
+    <div class="widget" data-w="sparse"><div class="wt">Try it · dense vs sparse memory</div></div>
+  </article>
+
+  <article class="sec">
+    <span class="kick gold">Exercise 6</span>
+    <h3>Dense vs sparse memory</h3>
+    <div class="note">1 million users × 10,000 items, 5 million ratings. For the dense matrix, multiply the number of cells by 4 bytes (float32). For CSR, count 8 bytes per rating (value + column index) plus 4 bytes per row pointer (N + 1). Then compute one dense batch of 128 users.</div>
+    <div class="ex">
+      <div class="qs">
+        <div class="q"><label>Dense matrix (GB)</label><input type="text" inputmode="decimal" data-ans="40" data-tol="0.1"><span class="mark"></span></div>
+        <div class="q"><label>CSR matrix (MB)</label><input type="text" inputmode="decimal" data-ans="44" data-tol="0.1"><span class="mark"></span></div>
+        <div class="q"><label>One dense batch of 128 users (MB)</label><input type="text" inputmode="decimal" data-ans="5.12" data-tol="0.02"><span class="mark"></span></div>
+        <div class="q"><label>Times smaller (dense / CSR)</label><input type="text" inputmode="decimal" data-ans="909" data-tol="12"><span class="mark"></span></div>
+      </div>
+      <div class="btns"><button class="btn primary" type="button" data-act="check">Check my answers</button><button class="btn" type="button" data-act="sol">Show the solution</button></div>
+      <div class="sol" hidden><p>10⁶ × 10⁴ × 4 B = <b>40 GB</b> · 5 × 10⁶ × 8 B + (10⁶ + 1) × 4 B ≈ <b>44 MB</b> · 128 × 10,000 × 4 B = <b>5.12 MB</b> · 40 GB / 44 MB ≈ <b>900</b> × smaller. During training only one dense batch is in memory at a time.</p></div>
+    </div>
+  </article>
+
+  <article class="sec">
+    <span class="kick">Explanation</span>
+    <h3>Batch processing: batches of users</h3>
+    <div class="note">We process the matrix in batches of users. Careful: the original example also splits the items ("10,000 users by 1,000 items"). That breaks the network, whose input layer has exactly M units. A batch must contain some users and ALL the items: shape (batch_size, M).</div>
+    <div class="widget" data-w="batchgame"><div class="wt">Your turn · valid batch or not?</div></div>
+<pre class="code">def generator(A, M, bs=128, p=0.5):          # A: ratings (CSR), M: mask (CSR)
+    while True:
+        A, M = shuffle(A, M)
+        for i in range(0, A.shape[0], bs):
+            a = A[i:i+bs].toarray()            # some users, ALL items
+            m = M[i:i+bs].toarray()
+            noisy = a * (np.random.random(a.shape) > p)   # input noise
+            yield noisy, a                     # input, target
+
+model.fit(generator(A, M), steps_per_epoch=A.shape[0] // 128, epochs=...)
+# fit_generator() is deprecated in TensorFlow 2: pass the generator to fit().
+# Test generator: yields (train rows, test rows) for the test MSE.</pre>
+    <div class="note">The tutorial first saves the train and test ratings as sparse files (preprocess2sparse.py → Atrain.npz, Atest.npz), then builds the autoencoder with input dropout and a masked loss, trains it with generators and plots the errors (autorec.py). Start on a small subset to check that the masked train MSE decreases.</div>
+  </article>
+
+  <article class="sec">
+    <span class="kick red">Limits</span>
+    <h3>What deep models add, and what they cost</h3>
+    <div class="note">Deep models capture non-linear patterns and share their weights across all users. But they have many more parameters (36 M vs 1.6 M for MF), many settings to tune (hidden size, dropout, learning rate), a real risk of overfitting, and they still cannot help a user with no rating. Rule of thumb: start from MF; add a deep model only if the TEST MSE really improves.</div>
+  </article>
+</section>
+
+<!-- ==================================================== PART 6 -->
+<section class="part" data-part="6" data-title="Summary &amp; quiz" hidden>
+  <header class="phead"><span class="big">✓</span><h2>Summary &amp; quiz</h2><p>Back to the five questions, then check yourself.</p></header>
+
+  <article class="sec">
+    <span class="kick">Summary</span>
+    <h3>Back to our questions: what we learned</h3>
+    <div class="note">The residual network corrects MF with a neural network. The autoencoder rebuilds each user's row and, with input noise, learns to fill the gaps. The masked loss and the batch generator make both trainable on real data.</div>
+    <div class="tw"><table><thead><tr><th>Question</th><th>Answer</th><th>Key formula / idea</th><th>Limit</th></tr></thead><tbody>
+      <tr><td>Q1 · Improve MF?</td><td>residual network</td><td>r̂ = MF(x) + ANN(x)</td><td>overfitting of the ANN branch</td></tr>
+      <tr><td>Q2 · Autoencoder?</td><td>rebuild the input</td><td>fit(X, X), bottleneck</td><td>can just copy without noise</td></tr>
+      <tr><td>Q3 · Fill missing ratings?</td><td>AutoRec + dropout</td><td>user row in, row out</td><td>36 M parameters</td></tr>
+      <tr><td>Q4 · Error with missing?</td><td>masked loss</td><td>J = Σ m (r − r̂)² / Σ m</td><td>test ratings never as input</td></tr>
+      <tr><td>Q5 · Too big for memory?</td><td>sparse + generator</td><td>CSR, batches of users</td><td>fit_generator deprecated</td></tr>
+    </tbody></table></div>
+  </article>
+
+  <article class="sec">
+    <span class="kick gold">Final quiz</span>
+    <h3>Ten questions to check yourself</h3>
+    <div style="display:grid;gap:12px">
+      <div class="mcq" data-final data-correct="1" data-explain="Part 1 · r̂ = MF(x) + ANN(x): the network learns a correction; both branches are joined by Add() and trained together."><p class="q">1 · In a residual network for recommendation, the ANN branch…</p><div class="opts"><button class="opt" type="button">replaces matrix factorization</button><button class="opt" type="button">learns a correction added to the MF prediction</button><button class="opt" type="button">computes user similarities</button><button class="opt" type="button">stores the full rating matrix</button></div></div>
+      <div class="mcq" data-final data-correct="2" data-explain="Part 1 · Residual = actual − MF = 3 − 3.5 = −0.5. A good correction has the same sign and a smaller size."><p class="q">2 · MF predicts 3.5, the actual rating is 3. What is the residual?</p><div class="opts"><button class="opt" type="button">+0.5</button><button class="opt" type="button">6.5</button><button class="opt" type="button">−0.5</button><button class="opt" type="button">0</button></div></div>
+      <div class="mcq" data-final data-correct="3" data-explain="Part 2 · model.fit(X, X): the network reproduces its input through a small bottleneck."><p class="q">3 · What is the target when training an autoencoder?</p><div class="opts"><button class="opt" type="button">A label y</button><button class="opt" type="button">Zero</button><button class="opt" type="button">The user's mean</button><button class="opt" type="button">The input X itself</button></div></div>
+      <div class="mcq" data-final data-correct="0" data-explain="Part 2 · Dense a → b has a × b weights + b biases: 1,000 × 50 + 50 = 50,050."><p class="q">4 · A dense layer from 1,000 inputs to 50 units (with biases) has…</p><div class="opts"><button class="opt" type="button">50,050 parameters</button><button class="opt" type="button">1,050 parameters</button><button class="opt" type="button">50,000 parameters</button><button class="opt" type="button">51,000 parameters</button></div></div>
+      <div class="mcq" data-final data-correct="1" data-explain="Part 2 · Users are the samples passed through the network; the same weights serve every user."><p class="q">5 · In AutoRec (user rows), where do the users appear?</p><div class="opts"><button class="opt" type="button">One weight vector per user</button><button class="opt" type="button">As samples (input rows), not as parameters</button><button class="opt" type="button">In the biases of the output layer</button><button class="opt" type="button">They do not appear</button></div></div>
+      <div class="mcq" data-final data-correct="2" data-explain="Part 3 · Fewer, bigger samples processed with matrix operations. The original slide states the opposite."><p class="q">6 · Why is AutoRec faster per epoch than a rating-based network?</p><div class="opts"><button class="opt" type="button">It loops over 20M ratings</button><button class="opt" type="button">It uses no weights</button><button class="opt" type="button">It loops over 130k user rows instead of 20M ratings</button><button class="opt" type="button">It skips the missing ratings</button></div></div>
+      <div class="mcq" data-final data-correct="0" data-explain="Part 3 · Hiding known ratings forces the network to predict them instead of copying its input. Only during training."><p class="q">7 · Input noise (dropout on the input) is used to…</p><div class="opts"><button class="opt" type="button">force the network to predict hidden ratings instead of copying</button><button class="opt" type="button">speed up prediction</button><button class="opt" type="button">replace the mask</button><button class="opt" type="button">remove the test ratings</button></div></div>
+      <div class="mcq" data-final data-correct="0" data-explain="Part 4 · Without the mask the network learns that missing (0) means 0 stars."><p class="q">8 · Why do we need a mask in the autoencoder's loss?</p><div class="opts"><button class="opt" type="button">So that missing ratings (0) are not learned as real zeros</button><button class="opt" type="button">To speed up training</button><button class="opt" type="button">To add noise</button><button class="opt" type="button">To normalize the ratings</button></div></div>
+      <div class="mcq" data-final data-correct="3" data-explain="Part 4 · Input = training ratings only; the test ratings are targets only, otherwise the model copies them."><p class="q">9 · To compute the test MSE of an autoencoder, the input is…</p><div class="opts"><button class="opt" type="button">the test matrix</button><button class="opt" type="button">train + test merged</button><button class="opt" type="button">a matrix of zeros</button><button class="opt" type="button">the training matrix; the test ratings are the targets</button></div></div>
+      <div class="mcq" data-final data-correct="2" data-explain="Part 5 · The input layer has M units: each row must keep all M items. Split users only."><p class="q">10 · How must the batches of a sparse matrix be built for AutoRec?</p><div class="opts"><button class="opt" type="button">Batches of items, all users</button><button class="opt" type="button">Random cells</button><button class="opt" type="button">Batches of users, with ALL the items</button><button class="opt" type="button">One rating at a time</button></div></div>
+    </div>
+    <div class="readout" id="finalScore"><span class="s">Answer the questions to see your score.</span></div>
+  </article>
+
+  <article class="sec">
+    <span class="kick">Homework</span>
+    <h3>To practise at home</h3>
+    <div style="display:grid;gap:10px">
+      <div class="box"><h4>Build</h4><span>Join your Keras MF and ANN with one Add() layer. Compare the test MSE with MF alone.</span></div>
+      <div class="box"><h4>Experiment</h4><span>Train the AutoRec with dropout 0, 0.2 and 0.5. Plot train and test MSE. Which rate is best?</span></div>
+      <div class="box"><h4>Code</h4><span>Write the masked MSE loss in Keras and a generator that yields (train rows, test rows) for the test MSE.</span></div>
+    </div>
+    <div class="box inv"><h4>Link with the context-aware lab</h4><span>The Keras model of the context-aware lab (embeddings for users, books, locations and authors, plus biases) is built from the same bricks as the residual network: Embedding, Concatenate, Dense, Add.</span></div>
+  </article>
+</section>
+
+    </div>
+  </main>
+</div>
+<script>
+(function(){
+"use strict";
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const el = h => { const d=document.createElement("div"); d.innerHTML=h.trim(); return d.firstElementChild; };
+const f2 = (x,d=2) => (x===null||isNaN(x)) ? "—" : Number(x).toFixed(d);
+const STEPS = ["Residual nets","Autoencoders","AutoRec","Masked loss","Lab"];
+
+/* ============================== navigation */
+const parts = $$(".part");
+let cur = 0;
+const partsUl = $("#parts"), sel = $("#partSel");
+parts.forEach((p,i)=>{
+  const title = p.dataset.title;
+  const li = el(`<li><button type="button"><span class="n">${i===0?"★":i===parts.length-1?"✓":i}</span><span>${title.replace(/^\d · /,"")}</span></button><ul class="toc" hidden></ul></li>`);
+  li.querySelector("button").onclick = ()=>show(i);
+  const toc = li.querySelector(".toc");
+  $$(".sec", p).forEach((s,k)=>{ const id=`p${i}s${k}`; s.id=id; const h=$("h3",s); if(h){ const a=el(`<li><a href="#${id}">${h.textContent}</a></li>`); a.querySelector("a").onclick=e=>{e.preventDefault(); document.getElementById(id).scrollIntoView({behavior:"smooth"});}; toc.append(a);} });
+  partsUl.append(li);
+  sel.append(new Option(title, i));
+});
+sel.onchange = ()=>show(+sel.value);
+function show(i){
+  cur = Math.max(0, Math.min(parts.length-1, i));
+  parts.forEach((p,k)=> p.hidden = k!==cur);
+  $$(".parts > li").forEach((li,k)=>{ li.querySelector("button").setAttribute("aria-current", k===cur); li.querySelector(".toc").hidden = k!==cur; });
+  sel.value = cur;
+  try { history.replaceState(null,"","#part"+cur); } catch(e){}
+  window.scrollTo({top:0});
+}
+parts.forEach((p,i)=>{
+  const n = el(`<div class="nav"><button type="button" class="btn">← Previous part</button><button type="button" class="btn primary">Next part →</button></div>`);
+  const [a,b] = n.querySelectorAll("button");
+  if(i===0) a.style.visibility="hidden"; if(i===parts.length-1) b.style.visibility="hidden";
+  a.onclick=()=>show(i-1); b.onclick=()=>show(i+1);
+  p.append(n);
+});
+$$("#pathBtns button").forEach(b=> b.onclick=()=>show(+b.dataset.go));
+$$("[data-thread]").forEach(t=>{ const k=+t.dataset.thread; STEPS.forEach((s,i)=> t.append(el(`<span class="${i+1===k?'on':i+1<k?'past':''}">${i+1} · ${s}</span>`))); });
+
+/* ============================== progress */
+const checks = new Map();
+function regCheck(node, part){ checks.set(node,{part, ok:false}); }
+function markCheck(node, ok){ const c=checks.get(node); if(!c) return; if(!c.ok) c.ok = ok; updProgress(); }
+function updProgress(){
+  const all=[...checks.values()]; const ok=all.filter(c=>c.ok).length;
+  $("#progTxt").textContent = `${ok} / ${all.length} checks correct`; $("#progBar").style.width = (all.length? ok/all.length*100:0)+"%";
+  $("#progMob").textContent = `${ok}/${all.length}`;
+  $$(".parts > li").forEach((li,i)=>{ const mine=all.filter(c=>c.part===i); li.classList.toggle("done", mine.length>0 && mine.every(c=>c.ok)); });
+}
+
+/* ============================== MCQ */
+$$(".mcq").forEach(m=>{
+  const part = +m.closest(".part").dataset.part; regCheck(m, part);
+  const correct = +m.dataset.correct, opts = $$(".opt", m);
+  const fb = el(`<div class="fb" hidden></div>`); m.append(fb);
+  opts.forEach((o,i)=> o.onclick=()=>{
+    opts.forEach(x=>x.classList.remove("right","wrong"));
+    const ok = i===correct; o.classList.add(ok?"right":"wrong"); if(!ok) opts[correct].classList.add("right");
+    fb.hidden=false; fb.className="fb "+(ok?"ok":"ko"); fb.innerHTML=`<b>${ok?"Correct.":"Not quite."}</b> ${m.dataset.explain}`;
+    if(!m.dataset.answered){ m.dataset.answered = ok?"1":"0"; }
+    markCheck(m, ok); updFinal();
+  });
+});
+function updFinal(){
+  const qs=$$("[data-final]"); const ans=qs.filter(q=>q.dataset.answered!==undefined); const ok=ans.filter(q=>q.dataset.answered==="1").length;
+  const out=$("#finalScore"); if(!out||!ans.length) return;
+  const msg = ans.length<qs.length ? `${ans.length} of ${qs.length} answered.` : ok===qs.length ? "Perfect: you are ready for the quiz." : ok>=7 ? "Good. Review the parts named in the questions you missed." : "Go back to the parts named in the explanations of the questions you missed, replay the simulators, then try again.";
+  out.innerHTML = `<span>Score (first answers): <b>${ok} / ${qs.length}</b></span><span class="s">${msg}</span>`;
+}
+
+/* ============================== exercises */
+let inId=0;
+$$(".ex").forEach(ex=>{
+  const part = +ex.closest(".part").dataset.part; regCheck(ex, part);
+  $$("input", ex).forEach(inp=>{ inp.id = "in"+(inId++); const lab=inp.previousElementSibling; if(lab && lab.tagName==="LABEL") lab.htmlFor=inp.id; inp.autocomplete="off"; });
+  const sol = $(".sol", ex);
+  $$("[data-act]", ex).forEach(b=> b.onclick=()=>{
+    if(b.dataset.act==="sol"){ sol.hidden=!sol.hidden; b.textContent = sol.hidden?"Show the solution":"Hide the solution"; return; }
+    let all=true;
+    $$(".q", ex).forEach(q=>{
+      const inp=$("input",q), mark=$(".mark",q); const v=inp.value.trim();
+      let ok=false;
+      if(inp.dataset.text!==undefined){ ok = v.toUpperCase().replace(/[^A-Z0-9]/g,"") === inp.dataset.text; }
+      else { const x=parseFloat(v.replace(",",".").replace(/[^0-9.\-]/g,"")); const a=+inp.dataset.ans; const tol = inp.dataset.tol!==undefined ? +inp.dataset.tol : 0.011; ok = !isNaN(x) && Math.abs(x-a) <= Math.max(tol, 1e-9); }
+      inp.classList.toggle("ok", ok); inp.classList.toggle("ko", !ok && v!=="");
+      mark.textContent = v==="" ? "—" : ok ? "✓ correct" : "✗ try again";
+      mark.style.color = ok ? "var(--ok)" : "var(--red)";
+      if(!ok) all=false;
+    });
+    markCheck(ex, all);
+  });
+});
+
+/* ============================== data & maths */
+const USERS=["Alice","Bob","Carol","Dave"], MOVIES=["Matrix","Avatar","Titanic","Inception","Toy Story"];
+const R0=()=>[[5,3,4,null,2],[4,null,4,3,1],[1,2,2,4,5],[2,1,null,5,4]];
+let RAT=R0(); const listeners=[]; const changed=()=>listeners.forEach(f=>f());
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+const rated=u=>RAT[u].map((v,j)=>v===null?null:j).filter(j=>j!==null);
+const umean=u=>{ const r=rated(u); return r.length? mean(r.map(j=>RAT[u][j])) : NaN; };
+const dev=(u,j)=>RAT[u][j]===null? null : RAT[u][j]-umean(u);
+const sg=(x,d=2)=>(x===null||isNaN(x))?"—":(x>0?"+":x<0?"−":"")+Math.abs(x).toFixed(d);
+function pearson(a,b){
+  const c=[0,1,2,3,4].filter(j=>RAT[a][j]!==null&&RAT[b][j]!==null);
+  const da=c.map(j=>dev(a,j)), db=c.map(j=>dev(b,j));
+  const num=da.reduce((s,v,k)=>s+v*db[k],0), na=Math.sqrt(da.reduce((s,v)=>s+v*v,0)), nb=Math.sqrt(db.reduce((s,v)=>s+v*v,0));
+  return {c,da,db,num,na,nb,w:(na&&nb)?num/(na*nb):NaN};
+}
+function cosine(a,b){
+  const c=[0,1,2,3,4].filter(j=>RAT[a][j]!==null&&RAT[b][j]!==null);
+  const x=c.map(j=>RAT[a][j]), y=c.map(j=>RAT[b][j]);
+  const num=x.reduce((s,v,k)=>s+v*y[k],0), d=Math.sqrt(x.reduce((s,v)=>s+v*v,0))*Math.sqrt(y.reduce((s,v)=>s+v*v,0));
+  return d? num/d : NaN;
+}
+function slider(id,label,min,max,step,val){ return `<div class="slider"><label for="${id}">${label}</label><output id="${id}o"></output><input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${val}"></div>`; }
+const opts=(v)=>["?",1,2,3,4,5].map(o=>`<option ${(v===null&&o==="?")||v===o?"selected":""}>${o}</option>`).join("");
+const W={};
+
+/* editable matrix + density (Part 1) */
+W.matrix = w=>{
+  w.append(el(`<div style="display:grid;gap:10px"><div class="tw"><table class="rtab mt"></table></div><div class="btns"><button type="button" class="btn" data-a="reset">Reset the table</button><button type="button" class="btn warn" data-a="empty">Remove 5 random ratings</button></div><div class="readout"></div><p class="legend">This table is shared by every simulator of the course: change a rating here and Parts 1 to 6 follow.</p></div>`));
+  const draw=()=>{
+    $(".mt",w).innerHTML=`<thead><tr><th>User</th>${MOVIES.map(m=>`<th>${m}</th>`).join("")}</tr></thead><tbody>${USERS.map((u,i)=>`<tr><td><b>${u}</b></td>${MOVIES.map((m,j)=>`<td class="${RAT[i][j]===null?'miss':''}"><select data-i="${i}" data-j="${j}" aria-label="rating of ${u} for ${m}">${opts(RAT[i][j])}</select></td>`).join("")}</tr>`).join("")}</tbody>`;
+    $$("select",w).forEach(s=>s.onchange=()=>{ RAT[+s.dataset.i][+s.dataset.j]= s.value==="?"?null:+s.value; changed(); });
+    const filled=RAT.flat().filter(v=>v!==null).length, tot=20;
+    $(".readout",w).innerHTML=`<span>filled cells = <b>${filled}</b> / ${tot}</span><span>density = ${filled}/${tot} = <b>${f2(100*filled/tot,0)}%</b> · sparsity = <b>${f2(100-100*filled/tot,0)}%</b></span><span class="s">Real platforms: density below 1%. Our teaching table is very dense.</span>`;
+  };
+  $('[data-a="reset"]',w).onclick=()=>{RAT=R0(); changed();};
+  $('[data-a="empty"]',w).onclick=()=>{ const f=[]; RAT.forEach((r,i)=>r.forEach((v,j)=>{if(v!==null) f.push([i,j]);})); for(let k=0;k<5&&f.length;k++){ const [i,j]=f.splice(Math.floor(Math.random()*f.length),1)[0]; RAT[i][j]=null; } changed(); };
+  listeners.push(draw); draw();
+};
+
+/* MSE calculator (Part 1) */
+W.mse = w=>{
+  w.append(el(`<div class="grid2"><div style="display:grid;gap:8px"><label for="msT"><b>True ratings</b></label><input id="msT" type="text" value="4, 2, 5"><label for="msP"><b>Predictions</b></label><input id="msP" type="text" value="3, 2, 4"></div><div class="readout"></div></div>`));
+  const p=s=>s.split(/[,;\s]+/).filter(x=>x!=="").map(x=>parseFloat(x.replace(",",".")));
+  const draw=()=>{ const t=p($("#msT",w).value), q=p($("#msP",w).value); const ro=$(".readout",w);
+    if(!t.length||t.length!==q.length||t.some(isNaN)||q.some(isNaN)){ ro.innerHTML=`<span class="s">Type two lists of the same length.</span>`; return; }
+    const e=t.map((v,k)=>(v-q[k])**2), m=mean(e);
+    ro.innerHTML=`<span>errors² = ${e.map(v=>f2(v)).join(" + ")}</span><span>MSE = ${f2(e.reduce((a,b)=>a+b,0))} / ${e.length} = <b>${f2(m,3)}</b></span><span>RMSE = √MSE = <b>${f2(Math.sqrt(m),3)}</b> star</span><span class="s">The RMSE is the typical size of an error, in stars.</span>`; };
+  $$("input",w).forEach(i=>i.addEventListener("input",draw)); draw();
+};
+
+function lineChart(series, opts={}){ // series: [{pts:[[x,y]],color,label}]
+  const Wd=opts.w||520, Ht=opts.h||220, P={l:44,r:12,t:12,b:32};
+  const xs=series.flatMap(s=>s.pts.map(p=>p[0])), ys=series.flatMap(s=>s.pts.map(p=>p[1])).filter(v=>isFinite(v));
+  const x0=opts.x0??Math.min(...xs), x1=opts.x1??Math.max(...xs), y0=opts.y0??0, y1=opts.y1??Math.max(0.5,...ys)*1.08;
+  const X=x=>P.l+(x-x0)/((x1-x0)||1)*(Wd-P.l-P.r), Y=y=>Ht-P.b-(Math.min(y,y1)-y0)/((y1-y0)||1)*(Ht-P.t-P.b);
+  const fx=opts.fx||(v=>f2(v,0));
+  let g=`<svg viewBox="0 0 ${Wd} ${Ht}" width="100%" role="img" aria-label="${opts.aria||"chart"}" style="max-width:${Wd}px;display:block">`;
+  for(let k=0;k<=4;k++){ const y=y0+(y1-y0)*k/4; g+=`<line x1="${P.l}" x2="${Wd-P.r}" y1="${Y(y)}" y2="${Y(y)}" stroke="currentColor" stroke-opacity=".12"/><text x="${P.l-6}" y="${Y(y)+4}" font-size="11" text-anchor="end" fill="currentColor" fill-opacity=".7">${f2(y)}</text>`; }
+  (opts.xt||[x0,(x0+x1)/2,x1]).forEach(x=>{ g+=`<text x="${X(x)}" y="${Ht-P.b+16}" font-size="11" text-anchor="middle" fill="currentColor" fill-opacity=".7">${fx(x)}</text>`; });
+  if(opts.xl) g+=`<text x="${(P.l+Wd-P.r)/2}" y="${Ht-2}" font-size="11" text-anchor="middle" fill="currentColor" fill-opacity=".8">${opts.xl}</text>`;
+  series.forEach(s=>{ g+=`<polyline fill="none" stroke="${s.color}" stroke-width="2.2" points="${s.pts.filter(p=>isFinite(p[1])).map(p=>X(p[0])+","+Y(p[1])).join(" ")}"/>`; s.pts.forEach(p=>{ if(isFinite(p[1])) g+=`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="2.6" fill="${s.color}"/>`; }); });
+  if(opts.mark) g+=`<line x1="${X(opts.mark)}" x2="${X(opts.mark)}" y1="${P.t}" y2="${Ht-P.b}" stroke="currentColor" stroke-dasharray="4 3" stroke-opacity=".6"/>`;
+  g+=`</svg><div class="legend">${series.map(s=>`<span style="color:${s.color};font-weight:600">■</span> ${s.label}`).join(" &nbsp; ")}</div>`;
+  return g;
+}
+const TEAL="#2B6F76", GOLD="#B08D3E", RED="#B4472A";
+
+function game(w, items, choices){
+  const st={}; const box=el(`<div style="display:grid;gap:8px"></div>`); const sc=el(`<p class="num" style="font-weight:600;color:var(--teal)"></p>`); w.append(box,sc);
+  regCheck(w, +w.closest(".part").dataset.part);
+  const draw=()=>{ box.innerHTML=""; let ok=0,done=0;
+    items.forEach(([q,a,why],i)=>{ const s=st[i]; const r=el(`<div class="gi ${s!==undefined?(s===a?'ok':'ko'):''}"><span>${q}</span><div class="seg" role="group">${choices.map((c,k)=>`<button type="button" data-a="${k}">${c}</button>`).join("")}</div>${s!==undefined?`<div class="why">${s===a?"✓":"✗"} ${why}</div>`:""}</div>`);
+      $$("button",r).forEach(b=>{ b.setAttribute("aria-pressed",s===+b.dataset.a); b.onclick=()=>{st[i]=+b.dataset.a; draw();}; }); if(s!==undefined){done++; if(s===a) ok++;} box.append(r); });
+    sc.textContent = done?`${ok} / ${items.length} correct`:""; if(done===items.length) markCheck(w, ok===items.length); };
+  draw();
+}
+
+/* ============================== chapter 6 part 2: deep learning */
+const fmt=n=>Math.round(n).toLocaleString("en-US");
+const bytes=b=> b>=1e9? f2(b/1e9,1)+" GB" : b>=1e6? f2(b/1e6,1)+" MB" : f2(b/1e3,1)+" kB";
+const nums=s=>s.split(/[,;\s]+/).filter(x=>x!=="").map(x=>parseFloat(x.replace(",",".")));
+
+W.resid = w=>{
+  const C=[["A",3.8,-0.5,3],["B",2.5,0.9,4],["C",4.2,0.3,4]];
+  w.append(el(`<div style="display:grid;gap:10px"><div class="tw"><table class="rs"></table></div><div class="readout"></div></div>`));
+  const draw=()=>{
+    $(".rs",w).innerHTML=`<thead><tr><th>Case</th><th>MF</th><th>ANN</th><th>Actual</th><th>Residual r − MF</th><th>Final MF + ANN</th><th>|error| MF → final</th></tr></thead><tbody>${C.map((c,k)=>{ const res=c[3]-c[1], fin=c[1]+c[2], e0=Math.abs(res), e1=Math.abs(c[3]-fin); return `<tr><td><b>${c[0]}</b></td>${[1,2,3].map(t=>`<td><input type="text" inputmode="decimal" data-k="${k}" data-t="${t}" value="${c[t]}" style="width:64px;text-align:center" aria-label="case ${c[0]} value ${t}"></td>`).join("")}<td class="num">${sg(res)}</td><td class="num">${f2(fin)}</td><td class="num ${e1<e0?'pos':e1>e0?'neg':''}">${f2(e0)} → ${f2(e1)} ${e1<e0?"✓":e1>e0?"✗":"="}</td></tr>`; }).join("")}</tbody>`;
+    $$("input",w).forEach(i=>i.onchange=()=>{ const x=parseFloat(i.value.replace(",",".")); if(!isNaN(x)) C[+i.dataset.k][+i.dataset.t]=x; draw(); });
+    const m0=mean(C.map(c=>(c[3]-c[1])**2)), m1=mean(C.map(c=>(c[3]-c[1]-c[2])**2));
+    $(".readout",w).innerHTML=`<span>MSE of MF alone = <b>${f2(m0,3)}</b></span><span>MSE of MF + ANN = <b>${f2(m1,3)}</b></span><span class="s">A good correction has the same sign as the residual and a smaller size.</span>`; };
+  draw();
+};
+
+W.aecount = w=>{
+  w.append(el(`<div class="grid2"><div class="ctrl">${slider("aeM","Movies M (input = output size)",1000,30000,1000,26000)}${slider("aeH","Hidden units H",10,1000,10,700)}${slider("aeN","Users N (for MF)",10000,200000,10000,130000)}${slider("aeK","MF factors K",1,50,1,10)}</div><div class="readout"></div></div>`));
+  const draw=()=>{ const M=+$("#aeM",w).value, H=+$("#aeH",w).value, N=+$("#aeN",w).value, K=+$("#aeK",w).value;
+    $("#aeMo",w).textContent=fmt(M); $("#aeHo",w).textContent=H; $("#aeNo",w).textContent=fmt(N); $("#aeKo",w).textContent=K;
+    const l1=M*H+H, l2=H*M+M, mf=K*(N+M);
+    $(".readout",w).innerHTML=`<span>encoder M → H: ${fmt(M)} × ${H} + ${H} = <b>${fmt(l1)}</b></span><span>decoder H → M: ${H} × ${fmt(M)} + ${fmt(M)} = <b>${fmt(l2)}</b></span><span>AutoRec total = <b>${f2((l1+l2)/1e6,2)} M</b></span><span>MF: K(N + M) = <b>${f2(mf/1e6,2)} M</b> → AutoRec ≈ <b>${f2((l1+l2)/mf,1)} ×</b> MF</span><span class="s">N does not enter the AutoRec count: users are samples, not parameters.</span>`; };
+  $$("input",w).forEach(i=>i.addEventListener("input",draw)); draw();
+};
+
+W.samples = w=>{
+  w.append(el(`<div class="grid2"><div class="ctrl">${slider("smN","Users N (thousands)",10,500,10,130)}${slider("smM","Movies M (thousands)",1,50,1,26)}${slider("smR","Ratings (millions)",1,100,1,20)}${slider("smB","Batch size",16,1024,16,128)}</div><div class="readout"></div></div>`));
+  const draw=()=>{ const N=+$("#smN",w).value*1000, M=+$("#smM",w).value*1000, R=+$("#smR",w).value*1e6, B=+$("#smB",w).value;
+    $("#smNo",w).textContent=fmt(N); $("#smMo",w).textContent=fmt(M); $("#smRo",w).textContent=fmt(R); $("#smBo",w).textContent=B;
+    $(".readout",w).innerHTML=`<span>residual net: <b>${fmt(R)}</b> samples (3 values each) → <b>${fmt(Math.ceil(R/B))}</b> batches</span><span>AutoRec: <b>${fmt(N)}</b> samples (${fmt(M)} values each) → <b>${fmt(Math.ceil(N/B))}</b> batches</span><span>AutoRec has <b>${f2(R/N,0)} ×</b> fewer samples per epoch</span><span class="s">Fewer, bigger samples = efficient matrix operations.</span>`; };
+  $$("input",w).forEach(i=>i.addEventListener("input",draw)); draw();
+};
+
+W.noise = w=>{
+  let drop=[];
+  w.append(el(`<div style="display:grid;gap:10px"><div class="grid2"><div class="ctrl"><label for="nzX"><b>A user's row (0 = missing)</b></label><input id="nzX" type="text" value="5, 3, 0, 4, 0, 2, 0, 5">${slider("nzP","Dropout rate p",0,0.9,0.05,0.25)}<div class="btns"><button type="button" class="btn" data-a="draw">Draw a new noise</button></div></div><div class="tw"><table class="nz"></table></div></div><div class="readout"></div></div>`));
+  const resample=()=>{ const p=+$("#nzP",w).value; drop=nums($("#nzX",w).value).map(()=>Math.random()<p); };
+  const draw=()=>{ const x=nums($("#nzX",w).value), p=+$("#nzP",w).value; $("#nzPo",w).textContent=f2(p,2); if(drop.length!==x.length) resample();
+    const noisy=x.map((v,k)=>drop[k]?0:v), hid=x.filter((v,k)=>v>0&&drop[k]).length, known=x.filter(v=>v>0).length;
+    $(".nz",w).innerHTML=`<thead><tr><th></th>${x.map((_,k)=>`<th>m${k+1}</th>`).join("")}</tr></thead><tbody><tr><td><b>original</b></td>${x.map(v=>`<td class="num">${v}</td>`).join("")}</tr><tr><td><b>input (noisy)</b></td>${noisy.map((v,k)=>`<td class="num ${x[k]>0&&drop[k]?'neg':''}">${v}</td>`).join("")}</tr><tr><td><b>target</b></td>${x.map(v=>`<td class="num">${v}</td>`).join("")}</tr></tbody>`;
+    $(".readout",w).innerHTML=`<span>known ratings = ${known} · hidden by the noise = <b>${hid}</b></span><span>the network must output the <b>${hid}</b> red rating(s) without seeing them</span><span class="s">The loss is still masked by the ORIGINAL known ratings. No noise at prediction time.</span>`; };
+  $("#nzX",w).addEventListener("input",()=>{resample(); draw();}); $("#nzP",w).addEventListener("input",()=>{resample(); draw();});
+  $('[data-a="draw"]',w).onclick=()=>{resample(); draw();}; draw();
+};
+
+W.mask = w=>{
+  w.append(el(`<div style="display:grid;gap:10px"><div class="grid2"><div style="display:grid;gap:8px"><label for="mkX"><b>Input x (0 = missing)</b></label><input id="mkX" type="text" value="5, 0, 3, 0, 4"><label for="mkY"><b>Output x̂</b></label><input id="mkY" type="text" value="4.6, 4.5, 3.4, 3.2, 4.2"></div><div class="tw"><table class="mk"></table></div></div><div class="readout"></div></div>`));
+  const draw=()=>{ const x=nums($("#mkX",w).value), y=nums($("#mkY",w).value), ro=$(".readout",w);
+    if(!x.length||x.length!==y.length||x.some(isNaN)||y.some(isNaN)){ ro.innerHTML=`<span class="s">Type two lists of the same length.</span>`; $(".mk",w).innerHTML=""; return; }
+    const m=x.map(v=>v!==0?1:0), e=x.map((v,k)=>(v-y[k])**2), nk=m.reduce((a,b)=>a+b,0), sm=e.reduce((s,v,k)=>s+v*m[k],0), su=e.reduce((a,b)=>a+b,0);
+    $(".mk",w).innerHTML=`<thead><tr><th></th>${x.map((_,k)=>`<th>${k+1}</th>`).join("")}</tr></thead><tbody><tr><td>mask</td>${m.map(v=>`<td class="num ${v?'pos':'neg'}">${v}</td>`).join("")}</tr><tr><td>(x − x̂)²</td>${e.map((v,k)=>`<td class="num" style="${m[k]?'':'opacity:.55'}">${f2(v)}</td>`).join("")}</tr></tbody>`;
+    ro.innerHTML=`<span>masked MSE = ${f2(sm)} / ${nk} = <b>${nk?f2(sm/nk,3):"—"}</b></span><span>unmasked MSE = ${f2(su)} / ${x.length} = <b>${f2(su/x.length,3)}</b></span><span>share of the unmasked loss from missing cells = <b>${su?f2(100*(su-sm)/su,1):0}%</b></span><span class="s">Divide by the number of KNOWN ratings, not by the vector length.</span>`; };
+  $$("input",w).forEach(i=>i.addEventListener("input",draw)); draw();
+};
+
+W.testmse = w=>{
+  w.append(el(`<div style="display:grid;gap:10px"><div class="grid3" style="display:grid;gap:8px"><label for="tmA"><b>Train row (input)</b></label><input id="tmA" type="text" value="5, 0, 3, 0, 0"><label for="tmB"><b>Test row (targets)</b></label><input id="tmB" type="text" value="0, 3, 0, 0, 4"><label for="tmY"><b>Output, predicted from the train row</b></label><input id="tmY" type="text" value="4.8, 3.5, 3.1, 2.9, 3.6"></div><div class="readout"></div></div>`));
+  const msk=(t,y)=>{ const idx=t.map((v,k)=>v!==0?k:-1).filter(k=>k>=0); return {idx, mse: idx.length? mean(idx.map(k=>(t[k]-y[k])**2)) : NaN}; };
+  const draw=()=>{ const a=nums($("#tmA",w).value), b=nums($("#tmB",w).value), y=nums($("#tmY",w).value), ro=$(".readout",w);
+    if(!(a.length===b.length&&b.length===y.length)||[...a,...b,...y].some(isNaN)){ ro.innerHTML=`<span class="s">Type three lists of the same length.</span>`; return; }
+    const overlap=a.some((v,k)=>v!==0&&b[k]!==0), tr=msk(a,y), te=msk(b,y);
+    ro.innerHTML=`<span>train mask = [${a.map(v=>v!==0?1:0).join(", ")}] → train MSE = <b>${f2(tr.mse,3)}</b></span><span>test mask = [${b.map(v=>v!==0?1:0).join(", ")}] → test MSE = <b>${f2(te.mse,3)}</b></span><span>test / train = <b>${tr.mse?f2(te.mse/tr.mse,1):"—"}</b></span>${overlap?`<span style="color:#F2A38C">A rating is in both rows: a train/test split never shares a cell.</span>`:""}<span class="s">One output, two masks: train mask for learning, test mask for evaluating.</span>`; };
+  $$("input",w).forEach(i=>i.addEventListener("input",draw)); draw();
+};
+
+W.sparse = w=>{
+  w.append(el(`<div class="grid2"><div class="ctrl">${slider("spN","Users N (thousands)",10,2000,10,1000)}${slider("spM","Items M (thousands)",1,50,1,10)}${slider("spR","Ratings (millions)",1,100,1,5)}${slider("spB","Batch size",16,1024,16,128)}</div><div class="readout"></div></div>`));
+  const draw=()=>{ const N=+$("#spN",w).value*1000, M=+$("#spM",w).value*1000, R=+$("#spR",w).value*1e6, B=+$("#spB",w).value;
+    $("#spNo",w).textContent=fmt(N); $("#spMo",w).textContent=fmt(M); $("#spRo",w).textContent=fmt(R); $("#spBo",w).textContent=B;
+    const dense=N*M*4, csr=R*8+(N+1)*4, batch=B*M*4;
+    $(".readout",w).innerHTML=`<span>dense (float32): ${fmt(N)} × ${fmt(M)} × 4 B = <b>${bytes(dense)}</b></span><span>CSR: ${fmt(R)} × 8 B + ${fmt(N+1)} × 4 B = <b>${bytes(csr)}</b></span><span>one dense batch: ${B} × ${fmt(M)} × 4 B = <b>${bytes(batch)}</b></span><span>dense / CSR ≈ <b>${f2(dense/csr,0)} ×</b> · density = ${f2(100*R/(N*M),3)}%</span><span class="s">Store sparse, train dense: one small batch at a time.</span>`; };
+  $$("input",w).forEach(i=>i.addEventListener("input",draw)); draw();
+};
+
+W.batchgame = w=> game(w, [
+  ["Batch of 128 users × all 10,000 items.",0,"shape (128, M): matches the input layer"],
+  ["Batch of 10,000 users × the first 1,000 items.",1,"the input layer expects M = 10,000 values per row"],
+  ["Batch of 64 users × all items, converted with .toarray().",0,"CSR row slice, then dense: correct"],
+  ["Batch of 128 random cells (user, item, rating).",1,"AutoRec needs whole user rows, not cells"],
+  ["Last batch of 37 users × all items.",0,"a smaller last batch is fine; the row length is what matters"],
+], ["Valid","Invalid"]);
+
+/* mount */
+$$("[data-w]").forEach(w=>{ const fn=W[w.dataset.w]; if(fn) fn(w); });
+updProgress();
+const mm=/^#part([0-9])$/.exec(location.hash||""); show(mm?+mm[1]:0);
+})();
+</script>
+</body>
+</html>
